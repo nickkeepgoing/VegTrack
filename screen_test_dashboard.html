@@ -1,0 +1,1080 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>VegTrack — Screen Test & Interactive Simulator Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Thai:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#eef1f7;
+  --bg-grad-a:#eef2ff;
+  --bg-grad-b:#f6f8fc;
+  --sidebar:#ffffff;
+  --card:#ffffff;
+  --card-2:#f8fafc;
+  --border:rgba(15,23,42,.08);
+  --border-h:rgba(15,23,42,.16);
+  --text:#0f172a;
+  --muted:#64748b;
+  --muted-2:#94a3b8;
+
+  --green:#16a34a;   --green-2:#15803d;  --lgreen:rgba(22,163,74,.10);
+  --orange:#d97706;  --orange-2:#b45309; --lorange:rgba(217,119,6,.10);
+  --red:#e11d48;     --red-2:#be123c;    --lred:rgba(225,29,72,.10);
+  --blue:#2563eb;    --blue-2:#1d4ed8;   --lblue:rgba(37,99,235,.10);
+  --purple:#7c3aed;  --purple-2:#6d28d9; --lpurple:rgba(124,58,237,.10);
+  --teal:#0d9488;    --teal-2:#0f766e;   --lteal:rgba(13,148,136,.10);
+  --pink:#db2777;    --pink-2:#be185d;   --lpink:rgba(219,39,119,.10);
+
+  --r:18px;
+  --r-sm:12px;
+  --shadow:0 4px 18px rgba(15,23,42,.07);
+  --shadow-lg:0 16px 40px rgba(15,23,42,.10);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-font-smoothing:antialiased;scroll-behavior:smooth}
+body{
+  font-family:'Inter','Noto Sans Thai','Segoe UI',sans-serif;
+  color:var(--text);
+  min-height:100vh;display:flex;flex-direction:column;font-size:16px;
+  background:
+    radial-gradient(900px 500px at 85% -10%, rgba(124,58,237,.07), transparent 60%),
+    radial-gradient(700px 500px at -5% 10%, rgba(22,163,74,.06), transparent 55%),
+    linear-gradient(180deg, var(--bg-grad-a), var(--bg-grad-b) 40%);
+  background-attachment:fixed;
+}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-thumb{background:rgba(100,116,139,.25);border-radius:8px}
+::-webkit-scrollbar-thumb:hover{background:rgba(100,116,139,.4)}
+
+/* ── Screen Test Controller Panel ───────────────────────────────────── */
+.test-bar{
+  background:linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  color:#f8fafc;
+  padding:14px 24px;
+  border-bottom:2px solid #38bdf8;
+  box-shadow:0 6px 20px rgba(0,0,0,.25);
+  position:sticky;top:0;z-index:999;
+  font-size:13px;
+}
+.tb-header{
+  display:flex;align-items:center;justify-content:space-between;
+  cursor:pointer;user-select:none;
+}
+.tb-title{
+  display:flex;align-items:center;gap:10px;font-weight:700;font-size:14.5px;letter-spacing:.3px;
+}
+.tb-badge{
+  background:linear-gradient(135deg,#38bdf8,#0284c7);color:#0f172a;
+  font-size:10px;font-weight:800;padding:3px 8px;border-radius:6px;
+  text-transform:uppercase;letter-spacing:1px;
+}
+.tb-content{
+  margin-top:14px;padding-top:14px;border-top:1px solid rgba(255,255,255,.12);
+  display:flex;flex-direction:column;gap:14px;
+}
+.tb-row{
+  display:flex;gap:14px;align-items:center;flex-wrap:wrap;
+}
+.tb-group{
+  display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.06);
+  padding:6px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.08);
+}
+.tb-label{font-size:11.5px;color:#94a3b8;font-weight:600;white-space:nowrap}
+.tb-val{font-family:'JetBrains Mono',monospace;color:#38bdf8;font-weight:700;min-width:38px}
+
+.tbtn{
+  background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.2);
+  padding:6px 12px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;
+  transition:all .18s ease;display:inline-flex;align-items:center;gap:6px;
+}
+.tbtn:hover{background:rgba(255,255,255,.2);transform:translateY(-1px)}
+.tbtn-green{background:rgba(34,197,94,.25);border-color:#22c55e;color:#4ade80}
+.tbtn-green:hover{background:rgba(34,197,94,.4)}
+.tbtn-orange{background:rgba(245,158,11,.25);border-color:#f59e0b;color:#fbbf24}
+.tbtn-orange:hover{background:rgba(245,158,11,.4)}
+.tbtn-red{background:rgba(244,63,94,.25);border-color:#f43f5e;color:#fda4af}
+.tbtn-red:hover{background:rgba(244,63,94,.4)}
+.tbtn-blue{background:rgba(56,189,248,.25);border-color:#38bdf8;color:#7dd3fc}
+.tbtn-blue:hover{background:rgba(56,189,248,.4)}
+
+input[type=range]{accent-color:#38bdf8;cursor:pointer}
+select.tselect{
+  background:#1e293b;color:#fff;border:1px solid rgba(255,255,255,.2);
+  padding:5px 10px;border-radius:6px;font-size:12px;outline:none;
+}
+
+/* ── Shell ───────────────────────────────── */
+.app{display:flex;flex:1;min-height:0}
+
+/* ── Sidebar ──────────────────────────────── */
+.sidebar{
+  width:296px;flex-shrink:0;background:rgba(255,255,255,.85);backdrop-filter:blur(24px);
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;
+  position:sticky;top:0;height:calc(100vh - 60px);overflow-y:auto;
+}
+.sb-header{padding:22px 20px 16px;border-bottom:1px solid var(--border);flex-shrink:0}
+.sb-logo{display:flex;align-items:center;gap:12px}
+.logo-icon{
+  width:44px;height:44px;border-radius:14px;flex-shrink:0;
+  background:linear-gradient(135deg,#22c55e 0%,#0d9488 100%);
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;font-weight:800;color:#fff;
+  box-shadow:0 6px 18px rgba(34,197,94,.35);
+}
+.logo-name{font-size:17.5px;font-weight:700;color:var(--text);letter-spacing:.2px}
+.logo-sub{font-size:10.5px;color:var(--muted-2);margin-top:2px;letter-spacing:1.2px;text-transform:uppercase;font-weight:600}
+.sb-section{
+  font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;
+  color:var(--muted-2);padding:18px 20px 10px;flex-shrink:0;
+}
+
+/* Lot nav in sidebar */
+.compare-grid{display:flex;flex-direction:column;gap:10px;padding:2px 14px 12px;flex-shrink:0}
+.lot-card{
+  border-radius:var(--r-sm);padding:16px 17px;cursor:pointer;
+  transition:all .22s cubic-bezier(.4,0,.2,1);border:1px solid var(--border);
+  background:rgba(15,23,42,.02);position:relative;overflow:hidden;
+}
+.lot-card:hover{background:rgba(15,23,42,.045);border-color:var(--border-h);transform:translateX(2px)}
+.lot-card.selected{background:linear-gradient(135deg,rgba(22,163,74,.12),rgba(13,148,136,.05));border-color:rgba(22,163,74,.4);box-shadow:0 4px 20px rgba(22,163,74,.1)}
+.lot-card.selected::before{content:'';position:absolute;left:0;top:10px;bottom:10px;width:3px;background:linear-gradient(180deg,var(--green),var(--teal));border-radius:3px}
+.lot-card.urgent-c{border-color:rgba(225,29,72,.4)!important;background:linear-gradient(135deg,rgba(225,29,72,.08),rgba(225,29,72,.02))!important}
+.lot-card.urgent-b{border-color:rgba(217,119,6,.35)!important;background:linear-gradient(135deg,rgba(217,119,6,.08),rgba(217,119,6,.02))!important}
+.lot-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.lot-name{font-size:14px;font-weight:600;color:var(--text)}
+.lot-priority{font-size:10px;font-weight:700;padding:4px 9px;border-radius:20px;border:1px solid;display:inline-flex;align-items:center;gap:4px}
+.lp-c{background:rgba(225,29,72,.12);color:#be123c;border-color:rgba(225,29,72,.3);animation:pulse2 1.6s ease infinite}
+.lp-b{background:rgba(217,119,6,.12);color:#b45309;border-color:rgba(217,119,6,.3)}
+.lp-a{background:rgba(22,163,74,.12);color:#15803d;border-color:rgba(22,163,74,.3)}
+@keyframes pulse2{0%,100%{opacity:1}50%{opacity:.45}}
+.lot-grade{font-family:'JetBrains Mono',monospace;font-size:44px;font-weight:800;line-height:1;margin-bottom:3px;letter-spacing:-1px}
+.gA{color:#16a34a}
+.gB{color:#b45309}
+.gC{color:#e11d48}
+.lot-days{font-size:12.5px;color:var(--muted);margin-bottom:8px;font-weight:500}
+.lot-sensors{display:flex;gap:5px;flex-wrap:wrap}
+.sbadge{font-size:9.5px;font-weight:600;padding:3px 8px;border-radius:20px;border:1px solid}
+.sok{background:rgba(22,163,74,.1);color:#15803d;border-color:rgba(22,163,74,.25)}
+.serr{background:rgba(225,29,72,.1);color:#be123c;border-color:rgba(225,29,72,.25)}
+.dq-bar-wrap{margin-top:10px;padding-top:8px;border-top:1px solid rgba(15,23,42,.06)}
+.dq-label{font-size:9px;font-weight:600;color:var(--muted-2);margin-bottom:4px;display:flex;justify-content:space-between}
+.dq-bar{height:4px;border-radius:3px;background:rgba(15,23,42,.07);overflow:hidden}
+.dq-fill{height:100%;border-radius:3px;transition:width .7s cubic-bezier(.4,0,.2,1)}
+.dq-good{background:linear-gradient(90deg,#22c55e,#4ade80)}
+.dq-fair{background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+.dq-poor{background:linear-gradient(90deg,#f43f5e,#fb7185)}
+
+/* Sidebar alerts */
+.sb-alerts{padding:0 12px 18px;overflow-y:auto}
+.alist{display:flex;flex-direction:column;gap:5px}
+.aitem{display:flex;gap:8px;padding:9px 11px;border-radius:10px;font-size:12px;font-weight:500;align-items:flex-start;line-height:1.45;border:1px solid transparent}
+.aitem.err{background:rgba(225,29,72,.08);color:#be123c;border-color:rgba(225,29,72,.16)}
+.aitem.warn{background:rgba(217,119,6,.08);color:#b45309;border-color:rgba(217,119,6,.16)}
+.aitem.info{background:rgba(22,163,74,.08);color:#15803d;border-color:rgba(22,163,74,.16)}
+.atime{opacity:.65;font-size:9px;white-space:nowrap;padding-top:2px;font-family:'JetBrains Mono',monospace;flex-shrink:0}
+
+/* ── Main area ────────────────────────────── */
+.main-area{flex:1;overflow-x:hidden;min-width:0;display:flex;flex-direction:column}
+.topbar{
+  background:rgba(255,255,255,.75);backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border);
+  padding:0 32px;height:64px;
+  display:flex;align-items:center;gap:14px;
+  position:sticky;top:0;z-index:200;flex-shrink:0;
+}
+.topbar-lots{display:flex;gap:8px}
+.tlot{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:500;color:var(--muted);
+  padding:5px 13px;border-radius:20px;border:1px solid var(--border);background:rgba(15,23,42,.02)}
+.tdot{width:6px;height:6px;border-radius:50%;background:rgba(15,23,42,.15);transition:.4s}
+.tdot.on{background:#16a34a;box-shadow:0 0 8px rgba(22,163,74,.5)}
+.topbar-right{margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted-2)}
+.astrip{display:none;align-items:center;gap:11px;padding:12px 32px;font-size:13.5px;font-weight:600;flex-shrink:0}
+.astrip.err{background:rgba(225,29,72,.08);color:#be123c;border-bottom:1px solid rgba(225,29,72,.16)}
+.astrip.warn{background:rgba(217,119,6,.08);color:#b45309;border-bottom:1px solid rgba(217,119,6,.16)}
+.astripx{cursor:pointer;font-size:15px;margin-left:auto;opacity:.6}
+.astripx:hover{opacity:1}
+.wrap{padding:28px 32px;flex:1;max-width:1520px;margin:0 auto;width:100%}
+.section-lbl{font-size:11.5px;font-weight:700;color:var(--muted-2);text-transform:uppercase;letter-spacing:1.5px;margin:24px 0 14px}
+.detail{display:none;animation:fadein .35s ease}
+.detail.visible{display:block}
+@keyframes fadein{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── Grade hero ───────────────────────────── */
+.grade-hero{
+  border-radius:var(--r);padding:32px 38px;margin-bottom:20px;
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:20px;
+  position:relative;overflow:hidden;background:var(--card);
+  box-shadow:var(--shadow-lg);border:1px solid var(--border);
+}
+.grade-hero::after{
+  content:'';position:absolute;top:-70px;right:-70px;
+  width:260px;height:260px;border-radius:50%;background:rgba(255,255,255,.05);
+  pointer-events:none;
+}
+.grade-hero::before{
+  content:'';position:absolute;bottom:-90px;left:20%;
+  width:220px;height:220px;border-radius:50%;background:rgba(255,255,255,.03);
+  pointer-events:none;
+}
+.gA-bg{background:linear-gradient(120deg,#0f3d27 0%,#14532d 45%,#16a34a 130%)}
+.gB-bg{background:linear-gradient(120deg,#4a2c06 0%,#78350f 45%,#d97706 130%)}
+.gC-bg{background:linear-gradient(120deg,#4c0519 0%,#881337 45%,#e11d48 130%)}
+.gnull-bg{background:linear-gradient(120deg,#1e2540 0%,#242c4d 100%)}
+.gh-left{display:flex;align-items:center;gap:20px;position:relative;z-index:1}
+.gh-lbl{font-size:11.5px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.55);margin-bottom:6px}
+.gh-val{font-family:'JetBrains Mono',monospace;font-size:96px;font-weight:800;line-height:.9;color:#fff;letter-spacing:-3px}
+.gh-msg{font-size:15px;color:rgba(255,255,255,.75);margin-top:8px;font-weight:500}
+.gh-right{display:flex;align-items:center;gap:18px;position:relative;z-index:1}
+.ring-wrap{position:relative;width:120px;height:120px;flex-shrink:0}
+.ring-wrap svg{transform:rotate(-90deg)}
+.ring-track{fill:none;stroke:rgba(255,255,255,.15);stroke-width:9}
+.ring-fill{fill:none;stroke:#fff;stroke-width:9;stroke-linecap:round;transition:stroke-dashoffset .8s cubic-bezier(.4,0,.2,1)}
+.ring-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.ring-num{font-family:'JetBrains Mono',monospace;font-size:24px;font-weight:800;color:#fff;line-height:1}
+.ring-unit{font-size:9.5px;color:rgba(255,255,255,.65);font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-top:3px}
+.gh-days-block{text-align:right}
+.gh-days-lbl{font-size:11px;color:rgba(255,255,255,.55);margin-bottom:5px;letter-spacing:.5px;text-transform:uppercase;font-weight:600}
+.gh-days-num{font-family:'JetBrains Mono',monospace;font-size:42px;font-weight:800;color:#fff;line-height:1}
+.gh-days-unit{font-size:15px;color:rgba(255,255,255,.6);margin-left:4px;font-weight:500}
+
+/* ── Metric cards ─────────────────────────── */
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;margin-bottom:8px}
+.card{
+  background:linear-gradient(160deg, var(--ctint,rgba(255,255,255,.03)), var(--card) 55%);
+  border:1px solid var(--border);border-radius:var(--r);
+  padding:20px 22px;transition:all .22s cubic-bezier(.4,0,.2,1);
+  box-shadow:var(--shadow);position:relative;overflow:hidden;
+}
+.card:hover{transform:translateY(-3px);box-shadow:0 14px 32px rgba(15,23,42,.12);border-color:var(--border-h)}
+.cicon{
+  width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;
+  background:var(--cg);box-shadow:0 6px 16px var(--cs);margin-bottom:12px;
+}
+.cicon svg{width:23px;height:23px;color:#fff}
+.clbl{font-size:11.5px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px}
+.cval{font-family:'JetBrains Mono',monospace;font-size:28px;font-weight:700;color:var(--text);line-height:1}
+.cunit{font-size:12px;color:var(--muted);font-weight:400}
+.dq-mini-row{display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted);margin-bottom:4px}
+
+/* ── Charts ───────────────────────────────── */
+.charts{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:8px}
+@media(max-width:760px){.charts{grid-template-columns:1fr}}
+.chartcard{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:22px;box-shadow:var(--shadow)}
+.chartlbl{font-size:12px;font-weight:700;color:var(--muted);margin-bottom:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.ldot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+svg.chart{width:100%;height:160px;display:block}
+
+/* ── Log ──────────────────────────────────── */
+.logbox{
+  background:#f8fafc;color:#334155;
+  font-family:'JetBrains Mono','Consolas',monospace;
+  font-size:12px;line-height:1.85;padding:18px;border-radius:var(--r);
+  max-height:300px;overflow-y:auto;white-space:pre;
+  border:1px solid var(--border);
+  box-shadow:inset 0 1px 4px rgba(15,23,42,.05), var(--shadow);
+}
+.rA{color:#15803d;font-weight:600}
+.rB{color:#b45309;font-weight:600}
+.rC{color:#be123c;font-weight:600}
+
+@media(max-width:640px){
+  .sidebar{width:100%;height:auto;position:relative}
+  .app{flex-direction:column}
+  .compare-grid{flex-direction:row;overflow-x:auto;flex-wrap:nowrap;padding:8px}
+  .lot-card{min-width:170px}
+  .gh-val{font-size:60px}
+  .wrap{padding:16px}
+}
+footer{text-align:center;font-size:12px;color:var(--muted-2);padding:16px 0 24px;border-top:1px solid var(--border);flex-shrink:0}
+</style>
+</head>
+<body>
+
+<!-- ── Screen Test Controller Bar ─────────────────────────────────────────── -->
+<div class="test-bar" id="testBar">
+  <div class="tb-header" onclick="toggleTestPanel()">
+    <div class="tb-title">
+      <span style="font-size:18px">🧪</span>
+      <span>VegTrack Screen Test & Simulator Panel</span>
+      <span class="tb-badge">Interactive Test Mode</span>
+    </div>
+    <div style="font-size:12px;color:#94a3b8">
+      <span id="tbToggleText">[ ซ่อนแผงทดสอบ ▲ ]</span>
+    </div>
+  </div>
+
+  <div class="tb-content" id="tbContent">
+    <div class="tb-row">
+      <span class="tb-label">🎯 พรีเซ็ตทดสอบด่วน:</span>
+      <button class="tbtn tbtn-green" onclick="applyPreset('A')">🟢 เกรด A (สดปกติ)</button>
+      <button class="tbtn tbtn-orange" onclick="applyPreset('B')">🟠 เกรด B (เตือนเร่งขาย)</button>
+      <button class="tbtn tbtn-red" onclick="applyPreset('C')">🔴 เกรด C (วิกฤต/ต้องขาย)</button>
+      <button class="tbtn tbtn-blue" onclick="triggerImpactSpike()">⚡ โดนกระแทก (Edge AI)</button>
+      <button class="tbtn" onclick="toggleDisconnect()">🔌 สลับสถานะเชื่อมต่อ</button>
+      <button class="tbtn" onclick="toggleDHTFault()">⚠️ จำลอง DHT เสีย</button>
+    </div>
+
+    <div class="tb-row">
+      <div class="tb-group">
+        <span class="tb-label">ล็อตที่เลือก:</span>
+        <select class="tselect" id="simLotSelect" onchange="onSimLotChange()"></select>
+        <button class="tbtn" style="padding:3px 8px" onclick="addNewLot()">+ เพิ่มล็อต</button>
+      </div>
+
+      <div class="tb-group">
+        <span class="tb-label">อุณหภูมิ (°C):</span>
+        <input type="range" id="simTemp" min="5" max="50" step="0.5" value="28" oninput="updateSimFromControls()">
+        <span class="tb-val" id="simTempTxt">28.0°C</span>
+      </div>
+
+      <div class="tb-group">
+        <span class="tb-label">ความชื้น (%):</span>
+        <input type="range" id="simHum" min="10" max="100" step="1" value="70" oninput="updateSimFromControls()">
+        <span class="tb-val" id="simHumTxt">70%</span>
+      </div>
+
+      <div class="tb-group">
+        <span class="tb-label">น้ำหนักคงเหลือ (%):</span>
+        <input type="range" id="simWeight" min="70" max="100" step="0.5" value="98" oninput="updateSimFromControls()">
+        <span class="tb-val" id="simWeightTxt">98.0%</span>
+      </div>
+    </div>
+
+    <div class="tb-row">
+      <div class="tb-group">
+        <span class="tb-label">เหตุการณ์ Edge AI:</span>
+        <select class="tselect" id="simEvent" onchange="updateSimFromControls()">
+          <option value="Still">N/A (นิ่ง)</option>
+          <option value="SmoothRoad">SmoothRoad (ถนนเรียบ)</option>
+          <option value="RoughRoad">RoughRoad (ถนนขรุขระ)</option>
+          <option value="Lift">Lift (ยกขนถ่าย)</option>
+          <option value="Impact">Impact (กระแทก!)</option>
+        </select>
+      </div>
+
+      <div class="tb-group">
+        <span class="tb-label">โหมดจำลองออโต้:</span>
+        <button class="tbtn tbtn-blue" id="simAutoBtn" onclick="toggleAutoSim()">▶ เริ่มจำลองข้อมูลสด (Real-time)</button>
+        <select class="tselect" id="simSpeed" onchange="changeSimSpeed()">
+          <option value="2000">ความเร็ว: ปกติ (2 วิ)</option>
+          <option value="1000">ความเร็ว: x2 (1 วิ)</option>
+          <option value="500">ความเร็ว: x4 (0.5 วิ)</option>
+        </select>
+      </div>
+
+      <div class="tb-group">
+        <span class="tb-label">คุณภาพข้อมูล:</span>
+        <button class="tbtn" onclick="simCorruptRow()">🗑️ ส่งข้อมูลขยะ (กรองออก)</button>
+        <button class="tbtn" onclick="resetLotData()">🔄 รีเซ็ตข้อมูลล็อตนี้</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="app">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sb-header">
+      <div class="sb-logo">
+        <div class="logo-icon">V</div>
+        <div>
+          <div class="logo-name">VegTrack</div>
+          <div class="logo-sub">Screen Test v4</div>
+        </div>
+      </div>
+    </div>
+    <div class="sb-section">ล็อตผักในระบบ</div>
+    <div class="compare-grid" id="compareGrid"></div>
+    <div class="sb-section">การแจ้งเตือนระบบ</div>
+    <div class="sb-alerts">
+      <div class="alist" id="alist">
+        <div class="aitem info"><span class="atime">-</span><span>พร้อมทดสอบระบบหน้าจอ</span></div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Area -->
+  <div class="main-area">
+    <header class="topbar">
+      <div class="topbar-lots" id="tlots"></div>
+      <span class="topbar-right" id="updlbl">พร้อมทดสอบ</span>
+    </header>
+    <div class="astrip" id="astrip">
+      <span>⚠️</span>
+      <span id="astripmsgs" style="flex:1"></span>
+      <span class="astripx" onclick="this.parentElement.style.display='none'">✕</span>
+    </div>
+    <div class="wrap">
+      <div id="detailPanes"></div>
+    </div>
+  </div>
+
+</div>
+
+<footer>VegTrack Screen Test Dashboard &mdash; ทีม BUZZA11DAY &mdash; Standalone HTML Simulator</footer>
+
+<script>
+// ── Global Test State & Config ──────────────────────────────────────────────
+const GMSG = {
+  A: 'ขายตามลำดับปกติ (ความสดสมบูรณ์)',
+  B: 'ควรเร่งขายก่อน (ผักเริ่มเสื่อมสภาพ)',
+  C: 'ต้องขายวันนี้! (น้ำหนักคงเหลือวิกฤต)'
+};
+
+const ICONS = {
+  temp: '<path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" stroke="currentColor" stroke-width="2"/><path d="M12 12V4a2 2 0 1 0-4 0v8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>',
+  hum: '<path d="M12 3c4 5 7 8.5 7 12a7 7 0 1 1-14 0c0-3.5 3-7 7-12Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>',
+  weight: '<rect x="4" y="10" width="4" height="10" rx="1" stroke="currentColor" stroke-width="2"/><rect x="10" y="6" width="4" height="14" rx="1" stroke="currentColor" stroke-width="2"/><rect x="16" y="3" width="4" height="17" rx="1" stroke="currentColor" stroke-width="2"/>',
+  impact: '<path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>',
+  event: '<path d="M3 12h4l2-7 4 14 2-7h6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>',
+  quality: '<path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6l-8-3Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="m9 12 2 2 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>',
+};
+
+// State store for multi-lots
+let lotsState = {
+  "ล็อต 1": createDefaultLotState("ล็อต 1", "COM3", 26.5, 75.0, 97.5, "A", 0, "Still"),
+  "ล็อต 2": createDefaultLotState("ล็อต 2", "COM4", 32.0, 55.0, 89.0, "B", 8, "RoughRoad"),
+  "ล็อต 3": createDefaultLotState("ล็อต 3", "COM5", 37.5, 42.0, 81.2, "C", 24, "Impact")
+};
+
+let activeAlerts = {};
+let alertsLog = [];
+let selectedLot = "ล็อต 1";
+let autoSimInterval = null;
+let isPanelOpen = true;
+
+function createDefaultLotState(name, port, temp, hum, weight, grade, impact, event) {
+  const calc = calcShelfLife(temp, weight);
+  const now = new Date();
+  const timeStr = now.toTimeString().split(' ')[0];
+
+  // generate initial 15 history points
+  const history = [];
+  let curW = weight + 2.5;
+  for (let i = 14; i >= 0; i--) {
+    const t = new Date(now.getTime() - i * 15000);
+    curW = Math.max(weight, curW - 0.15);
+    const c = calcShelfLife(temp, curW);
+    history.push({
+      temp: temp + (Math.random() * 0.4 - 0.2),
+      humidity: hum + (Math.random() * 1.0 - 0.5),
+      pct_weight: Number(curW.toFixed(1)),
+      days: c.days,
+      grade: c.grade,
+      impact: Math.max(0, impact - Math.floor(i / 3)),
+      event: i === 0 ? event : (i % 5 === 0 ? "RoughRoad" : "Still"),
+      time: t.toTimeString().split(' ')[0],
+      connected: true
+    });
+  }
+
+  return {
+    name: name,
+    port: port,
+    temp: temp,
+    humidity: hum,
+    pct_weight: weight,
+    days: calc.days,
+    grade: calc.grade,
+    impact: impact,
+    event: event,
+    time: timeStr,
+    connected: true,
+    sensor_dht: true,
+    sensor_weight: true,
+    history: history,
+    rows_saved: history.length,
+    rows_skipped: 1
+  };
+}
+
+// ── Shelf Life Equation Calibration Math (VegTrack Standard) ───────────
+function calcShelfLife(temp, weightPct) {
+  const rate = 0.1685 * temp + 4.2172; // % weight loss per day
+  const days = (weightPct - 80.0) / rate;
+  const daysClamped = Math.max(0, Number(days.toFixed(1)));
+
+  let grade = "C";
+  if (daysClamped >= 1.5) grade = "A";
+  else if (daysClamped >= 0.5) grade = "B";
+
+  return { rate: Number(rate.toFixed(2)), days: daysClamped, grade: grade };
+}
+
+function esc(s){ return String(s == null ? '-' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function pad(s, n){ s = (s == null ? '-' : String(s)); while (s.length < n) s += ' '; return s.slice(0, n); }
+
+function urgency(lot) {
+  if (!lot.connected) return 0;
+  return lot.grade === 'C' ? 3 : lot.grade === 'B' ? 2 : lot.grade === 'A' ? 1 : 0;
+}
+
+function dataQuality(lot) {
+  const total = lot.rows_saved + lot.rows_skipped;
+  if (!total) return null;
+  const pct = Math.round(lot.rows_saved / total * 100);
+  const cls = pct >= 90 ? 'dq-good' : pct >= 70 ? 'dq-fair' : 'dq-poor';
+  const lbl = pct >= 90 ? 'คุณภาพดี' : pct >= 70 ? 'ปานกลาง' : 'ต่ำ — มีขยะมาก';
+  return { pct, cls, lbl };
+}
+
+// ── Render UI Components ──────────────────────────────────────────────────
+function renderCompare() {
+  const lots = Object.values(lotsState);
+  const sorted = [...lots].sort((a, b) => urgency(b) - urgency(a));
+
+  document.getElementById('compareGrid').innerHTML = sorted.map(lot => {
+    const u = urgency(lot);
+    const urg = u === 3 ? 'urgent-c' : u === 2 ? 'urgent-b' : '';
+    const sel = lot.name === selectedLot ? 'selected' : '';
+    const priCls = u === 3 ? 'lp-c' : u === 2 ? 'lp-b' : 'lp-a';
+    const priLbl = u === 3 ? '⚠️ ขายก่อน' : u === 2 ? '⬆️ เร่งขาย' : '✓ ปกติ';
+    const dq = dataQuality(lot);
+    const dqHtml = dq ? `<div class="dq-bar-wrap">
+      <div class="dq-label"><span>คุณภาพข้อมูล: ${dq.lbl}</span><span>${dq.pct}%</span></div>
+      <div class="dq-bar"><div class="dq-fill ${dq.cls}" style="width:${dq.pct}%"></div></div>
+    </div>` : '';
+
+    return `<div class="lot-card ${urg} ${sel}" onclick="selectLot('${esc(lot.name)}')">
+      <div class="lot-top">
+        <span class="lot-name">${esc(lot.name)}</span>
+        <span class="lot-priority ${priCls}">${priLbl}</span>
+      </div>
+      <div class="lot-grade g${lot.grade || '-'}">${lot.grade || '-'}</div>
+      <div class="lot-days">${lot.days != null ? lot.days + ' วัน' : 'รอข้อมูล...'}</div>
+      <div class="lot-sensors">
+        <span class="sbadge ${lot.connected ? 'sok' : 'serr'}">Serial ${lot.connected ? '✓' : '✗'}</span>
+        <span class="sbadge ${lot.sensor_dht ? 'sok' : 'serr'}">DHT ${lot.sensor_dht ? '✓' : '✗'}</span>
+        <span class="sbadge ${lot.sensor_weight ? 'sok' : 'serr'}">Scale ${lot.sensor_weight ? '✓' : '✗'}</span>
+      </div>
+      ${dqHtml}
+    </div>`;
+  }).join('');
+}
+
+function ensureDetailPanes() {
+  const panes = document.getElementById('detailPanes');
+  Object.values(lotsState).forEach(lot => {
+    const id = 'pane_' + lot.name.replace(/\s/g, '_');
+    if (!document.getElementById(id)) {
+      const div = document.createElement('div');
+      div.id = id;
+      div.className = 'detail';
+      div.innerHTML = `
+        <div class="grade-hero gnull-bg" id="${id}_hero">
+          <div class="gh-left">
+            <div>
+              <div class="gh-lbl">เกรดผักคะน้า &middot; ${esc(lot.name)}</div>
+              <div class="gh-val" id="${id}_gv">-</div>
+              <div class="gh-msg" id="${id}_gmsg">รอข้อมูล...</div>
+            </div>
+          </div>
+          <div class="gh-right">
+            <div class="ring-wrap">
+              <svg viewBox="0 0 124 124" width="120" height="120">
+                <circle class="ring-track" cx="62" cy="62" r="52"/>
+                <circle class="ring-fill" id="${id}_ring" cx="62" cy="62" r="52"
+                        stroke-dasharray="326.7" stroke-dashoffset="326.7"/>
+              </svg>
+              <div class="ring-center">
+                <div class="ring-num" id="${id}_ringnum">-</div>
+                <div class="ring-unit">น้ำหนัก%</div>
+              </div>
+            </div>
+            <div class="gh-days-block">
+              <div class="gh-days-lbl">อายุการเก็บรักษาคงเหลือ</div>
+              <div><span class="gh-days-num" id="${id}_dv">-</span><span class="gh-days-unit">วัน</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="cards">
+          <div class="card" style="--cg:linear-gradient(135deg,#f43f5e,#fb923c);--cs:rgba(244,63,94,.35)">
+            <div class="cicon"><svg viewBox="0 0 24 24" fill="none">${ICONS.temp}</svg></div>
+            <div class="clbl">อุณหภูมิ</div>
+            <div class="cval"><span id="${id}_tv">-</span><span class="cunit"> °C</span></div>
+          </div>
+          <div class="card" style="--cg:linear-gradient(135deg,#3b82f6,#22d3ee);--cs:rgba(59,130,246,.35)">
+            <div class="cicon"><svg viewBox="0 0 24 24" fill="none">${ICONS.hum}</svg></div>
+            <div class="clbl">ความชื้นสัมพัทธ์</div>
+            <div class="cval"><span id="${id}_hv">-</span><span class="cunit"> %</span></div>
+          </div>
+          <div class="card" style="--cg:linear-gradient(135deg,#14b8a6,#4ade80);--cs:rgba(20,184,166,.35)">
+            <div class="cicon"><svg viewBox="0 0 24 24" fill="none">${ICONS.weight}</svg></div>
+            <div class="clbl">น้ำหนักคงเหลือ</div>
+            <div class="cval"><span id="${id}_wv">-</span><span class="cunit"> %</span></div>
+          </div>
+          <div class="card" style="--cg:linear-gradient(135deg,#8b5cf6,#ec4899);--cs:rgba(139,92,246,.35)">
+            <div class="cicon"><svg viewBox="0 0 24 24" fill="none">${ICONS.impact}</svg></div>
+            <div class="clbl">กระแทกสะสม</div>
+            <div class="cval" id="${id}_iv">-</div>
+          </div>
+          <div class="card" style="--cg:linear-gradient(135deg,#f59e0b,#fbbf24);--cs:rgba(245,158,11,.35)">
+            <div class="cicon"><svg viewBox="0 0 24 24" fill="none">${ICONS.event}</svg></div>
+            <div class="clbl">Edge AI Event</div>
+            <div class="cval" style="font-size:16px;padding-top:4px" id="${id}_ev">-</div>
+          </div>
+          <div class="card" style="--cg:linear-gradient(135deg,#22c55e,#0d9488);--cs:rgba(34,197,94,.35)">
+            <div class="cicon"><svg viewBox="0 0 24 24" fill="none">${ICONS.quality}</svg></div>
+            <div class="clbl">คุณภาพข้อมูล Serial</div>
+            <div class="dq-mini-row"><span>บันทึก: <b style="color:#16a34a" id="${id}_saved">0</b></span><span>กรองออก: <b style="color:#f59e0b" id="${id}_skip">0</b></span></div>
+            <div class="dq-bar" style="margin-top:6px"><div class="dq-fill dq-good" id="${id}_dqfill" style="width:0%"></div></div>
+          </div>
+        </div>
+
+        <div class="charts">
+          <div class="chartcard">
+            <div class="chartlbl">
+              <span class="ldot" style="background:#e11d48"></span>อุณหภูมิ (°C)
+              &nbsp;<span class="ldot" style="background:#0891b2"></span>ความชื้น (%)
+            </div>
+            <svg class="chart" id="${id}_svgTH" viewBox="0 0 600 140" preserveAspectRatio="none"></svg>
+          </div>
+          <div class="chartcard">
+            <div class="chartlbl"><span class="ldot" style="background:#16a34a"></span>แนวโน้มวันที่เหลือ (Days Left)</div>
+            <svg class="chart" id="${id}_svgDays" viewBox="0 0 600 140" preserveAspectRatio="none"></svg>
+          </div>
+        </div>
+
+        <div class="section-lbl">micro:bit Serial Raw Stream Log</div>
+        <div class="logbox" id="${id}_log">รอข้อมูล...</div>`;
+      panes.appendChild(div);
+    }
+  });
+}
+
+function selectLot(name) {
+  selectedLot = name;
+  document.querySelectorAll('.detail').forEach(d => d.classList.remove('visible'));
+  const id = 'pane_' + name.replace(/\s/g, '_');
+  const p = document.getElementById(id);
+  if (p) p.classList.add('visible');
+  document.querySelectorAll('.lot-card').forEach(c => {
+    c.classList.toggle('selected', c.querySelector('.lot-name')?.textContent === name);
+  });
+  syncControlsWithLot(name);
+}
+
+function updateDetail(lot) {
+  const id = 'pane_' + lot.name.replace(/\s/g, '_');
+  const s = (sid, v) => { const el = document.getElementById(id + sid); if (el) el.textContent = v ?? '-'; };
+  const grade = lot.grade || '-';
+  const hero = document.getElementById(id + '_hero');
+  const gEl = document.getElementById(id + '_gv');
+  const gMsg = document.getElementById(id + '_gmsg');
+
+  if (hero) hero.className = 'grade-hero g' + (grade === '-' ? 'null' : grade) + '-bg';
+  if (gEl) gEl.textContent = grade;
+  if (gMsg) gMsg.textContent = GMSG[grade] || 'รอข้อมูล...';
+
+  s('_tv', lot.temp != null ? lot.temp.toFixed(1) : '-');
+  s('_hv', lot.humidity != null ? lot.humidity.toFixed(1) : '-');
+  s('_wv', lot.pct_weight != null ? lot.pct_weight.toFixed(1) : '-');
+  s('_dv', lot.days != null ? lot.days.toFixed(1) : '-');
+  s('_iv', lot.impact);
+  s('_ev', lot.event);
+  s('_skip', lot.rows_skipped);
+  s('_saved', lot.rows_saved);
+
+  // SVG Ring Chart calculation
+  const ring = document.getElementById(id + '_ring');
+  const ringnum = document.getElementById(id + '_ringnum');
+  const CIRC = 326.7;
+  if (ring) {
+    const pct = (lot.pct_weight != null) ? Math.max(0, Math.min(100, lot.pct_weight)) : 0;
+    ring.style.strokeDashoffset = String(CIRC - (pct / 100) * CIRC);
+  }
+  if (ringnum) ringnum.textContent = (lot.pct_weight != null) ? lot.pct_weight.toFixed(1) + '%' : '-';
+
+  const dq = dataQuality(lot);
+  const dqfill = document.getElementById(id + '_dqfill');
+  if (dqfill && dq) {
+    dqfill.style.width = dq.pct + '%';
+    dqfill.className = 'dq-fill ' + dq.cls;
+  }
+
+  // Draw Charts
+  const th = document.getElementById(id + '_svgTH');
+  const dsvg = document.getElementById(id + '_svgDays');
+  if (th) drawLines(th, [lot.history.map(r => r.temp), lot.history.map(r => r.humidity)], ['#e11d48', '#0891b2'], false);
+  if (dsvg) drawLines(dsvg, [lot.history.map(r => r.days)], ['#16a34a'], true);
+
+  // Raw Log Output
+  const log = document.getElementById(id + '_log');
+  if (log && lot.history.length) {
+    const hdr = pad('เวลา', 10) + pad('T°C', 7) + pad('H%', 7) + pad('W%', 8) + pad('Days', 7) + pad('Gr', 5) + pad('Impact', 8) + '  Event';
+    const rows = lot.history.slice().reverse().map(r => {
+      const ln = pad(r.time, 10) + pad(r.temp != null ? r.temp.toFixed(1) : '-', 7) + pad(r.humidity != null ? r.humidity.toFixed(1) : '-', 7) + pad(r.pct_weight != null ? r.pct_weight.toFixed(1) : '-', 8) + pad(r.days != null ? r.days.toFixed(1) : '-', 7) + pad(r.grade || '-', 5) + pad(r.impact != null ? r.impact : '-', 8) + '  ' + (r.event || '-');
+      const cls = r.grade === 'A' ? 'rA' : r.grade === 'B' ? 'rB' : r.grade === 'C' ? 'rC' : '';
+      const e = ln.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      return cls ? '<span class="' + cls + '">' + e + '</span>' : e;
+    });
+    log.innerHTML = [hdr, '─'.repeat(64), ...rows].join('\n');
+  }
+}
+
+function drawLines(svg, series, colors, marker, W = 600, H = 140, P = 20) {
+  svg.innerHTML = '';
+  const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+  svg.appendChild(defs);
+
+  for (let i = 0; i <= 3; i++) {
+    const y = P + i * (H - 2 * P) / 3;
+    const el = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    el.setAttribute('x1', P); el.setAttribute('x2', W - P);
+    el.setAttribute('y1', y); el.setAttribute('y2', y);
+    el.setAttribute('stroke', 'rgba(15,23,42,0.07)'); el.setAttribute('stroke-width', '1');
+    svg.appendChild(el);
+  }
+
+  const n = series[0]?.length || 0; if (n < 2) return;
+  series.forEach((pts, si) => {
+    const vals = pts.filter(v => v != null);
+    if (vals.length < 2) return;
+    const mx = Math.max(...vals), mn = Math.min(...vals), rng = (mx - mn) || 1;
+    const x = i => P + (i / (n - 1)) * (W - 2 * P);
+    const y = v => H - P - ((v - mn) / rng) * (H - 2 * P);
+
+    const gid = 'grad' + si + Math.random().toString(36).slice(2, 8);
+    const grad = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
+    grad.setAttribute('id', gid); grad.setAttribute('x1', '0'); grad.setAttribute('y1', '0'); grad.setAttribute('x2', '0'); grad.setAttribute('y2', '1');
+    const st1 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+    st1.setAttribute('offset', '0%'); st1.setAttribute('stop-color', colors[si]); st1.setAttribute('stop-opacity', '.28');
+    const st2 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+    st2.setAttribute('offset', '100%'); st2.setAttribute('stop-color', colors[si]); st2.setAttribute('stop-opacity', '0');
+    grad.appendChild(st1); grad.appendChild(st2); defs.appendChild(grad);
+
+    let d = '', area = '', prev = null, firstX = null, lastX = null;
+    pts.forEach((v, i) => {
+      if (v == null) { prev = null; return; }
+      const px = x(i), py = y(v);
+      if (prev === null) { d += 'M ' + px + ' ' + py; area += 'M ' + px + ' ' + H + ' L ' + px + ' ' + py; firstX = firstX ?? px; }
+      else { d += ' L ' + px + ' ' + py; area += ' L ' + px + ' ' + py; }
+      lastX = px; prev = i;
+    });
+    if (lastX != null) area += ' L ' + lastX + ' ' + H + ' Z';
+
+    const areaPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    areaPath.setAttribute('d', area); areaPath.setAttribute('fill', 'url(#' + gid + ')'); areaPath.setAttribute('stroke', 'none');
+    svg.appendChild(areaPath);
+
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('d', d); path.setAttribute('fill', 'none');
+    path.setAttribute('stroke', colors[si]); path.setAttribute('stroke-width', '2.4');
+    path.setAttribute('stroke-linecap', 'round'); path.setAttribute('stroke-linejoin', 'round');
+    svg.appendChild(path);
+
+    if (marker) {
+      const li = pts.reduce((a, v, i) => v != null ? i : a, -1);
+      if (li >= 0) {
+        const glow = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        glow.setAttribute('cx', x(li)); glow.setAttribute('cy', y(pts[li]));
+        glow.setAttribute('r', '8'); glow.setAttribute('fill', colors[si]); glow.setAttribute('opacity', '.25');
+        svg.appendChild(glow);
+        const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        c.setAttribute('cx', x(li)); c.setAttribute('cy', y(pts[li]));
+        c.setAttribute('r', '4'); c.setAttribute('fill', colors[si]);
+        c.setAttribute('stroke', '#ffffff'); c.setAttribute('stroke-width', '1.5');
+        svg.appendChild(c);
+      }
+    }
+  });
+}
+
+function refreshUI() {
+  const lots = Object.values(lotsState);
+  if (!lots.length) return;
+
+  document.getElementById('tlots').innerHTML = lots.map(l =>
+    `<div class="tlot"><span class="tdot ${l.connected ? 'on' : ''}"></span>${esc(l.name)}</div>`
+  ).join('');
+
+  const nowStr = new Date().toTimeString().split(' ')[0];
+  document.getElementById('updlbl').textContent = 'อัปเดตหน้าจอ ' + nowStr;
+
+  renderCompare();
+  ensureDetailPanes();
+
+  document.querySelectorAll('.detail').forEach(d => d.classList.remove('visible'));
+  const selPane = document.getElementById('pane_' + selectedLot.replace(/\s/g, '_'));
+  if (selPane) selPane.classList.add('visible');
+
+  lots.forEach(lot => updateDetail(lot));
+
+  // Render Alerts List
+  const alertKeys = Object.keys(activeAlerts);
+  const strip = document.getElementById('astrip');
+  if (alertKeys.length) {
+    strip.style.display = 'flex';
+    const isErr = alertKeys.some(k => activeAlerts[k].level === 'err');
+    strip.className = 'astrip ' + (isErr ? 'err' : 'warn');
+    document.getElementById('astripmsgs').textContent = alertKeys.map(k => activeAlerts[k].msg).join('  |  ');
+  } else {
+    strip.style.display = 'none';
+  }
+
+  if (alertsLog.length) {
+    document.getElementById('alist').innerHTML = alertsLog.slice().reverse().slice(0, 30).map(a =>
+      `<div class="aitem ${a.level}"><span class="atime">${esc(a.time)}</span><span>${esc(a.msg)}</span></div>`
+    ).join('');
+  }
+}
+
+// ── Screen Test Simulator Controls ──────────────────────────────────────────
+function initSimulator() {
+  updateSimSelectDropdown();
+  syncControlsWithLot(selectedLot);
+  refreshUI();
+}
+
+function updateSimSelectDropdown() {
+  const sel = document.getElementById('simLotSelect');
+  sel.innerHTML = Object.keys(lotsState).map(k => `<option value="${esc(k)}">${esc(k)}</option>`).join('');
+  sel.value = selectedLot;
+}
+
+function syncControlsWithLot(lotName) {
+  const lot = lotsState[lotName];
+  if (!lot) return;
+
+  document.getElementById('simLotSelect').value = lotName;
+  document.getElementById('simTemp').value = lot.temp;
+  document.getElementById('simTempTxt').textContent = lot.temp.toFixed(1) + '°C';
+
+  document.getElementById('simHum').value = lot.humidity;
+  document.getElementById('simHumTxt').textContent = lot.humidity.toFixed(0) + '%';
+
+  document.getElementById('simWeight').value = lot.pct_weight;
+  document.getElementById('simWeightTxt').textContent = lot.pct_weight.toFixed(1) + '%';
+
+  document.getElementById('simEvent').value = lot.event || 'Still';
+}
+
+function onSimLotChange() {
+  const val = document.getElementById('simLotSelect').value;
+  if (lotsState[val]) {
+    selectLot(val);
+  }
+}
+
+function updateSimFromControls() {
+  const lot = lotsState[selectedLot];
+  if (!lot) return;
+
+  const temp = parseFloat(document.getElementById('simTemp').value);
+  const hum = parseFloat(document.getElementById('simHum').value);
+  const weight = parseFloat(document.getElementById('simWeight').value);
+  const event = document.getElementById('simEvent').value;
+
+  document.getElementById('simTempTxt').textContent = temp.toFixed(1) + '°C';
+  document.getElementById('simHumTxt').textContent = hum.toFixed(0) + '%';
+  document.getElementById('simWeightTxt').textContent = weight.toFixed(1) + '%';
+
+  pushSimulatedPacket(lot.name, temp, hum, weight, event);
+}
+
+function pushSimulatedPacket(lotName, temp, hum, weight, event) {
+  const lot = lotsState[lotName];
+  if (!lot) return;
+
+  const calc = calcShelfLife(temp, weight);
+  const now = new Date();
+  const timeStr = now.toTimeString().split(' ')[0];
+
+  lot.temp = temp;
+  lot.humidity = hum;
+  lot.pct_weight = weight;
+  lot.days = calc.days;
+  lot.grade = calc.grade;
+  lot.event = event;
+  lot.time = timeStr;
+
+  if (event === 'Impact') {
+    lot.impact = (lot.impact || 0) + 1;
+    addAlert(lotName + '_impact', 'warn', `[${lotName}] ตรวจพบแรงกระแทกสะสม ${lot.impact} ครั้ง!`);
+  }
+
+  if (calc.grade === 'C') {
+    addAlert(lotName + '_grade_c', 'err', `[${lotName}] เกรด C! ต้องขายหรือคัดแยกทันที`);
+  } else {
+    removeAlert(lotName + '_grade_c');
+  }
+
+  const packet = {
+    temp: temp,
+    humidity: hum,
+    pct_weight: weight,
+    days: calc.days,
+    grade: calc.grade,
+    impact: lot.impact,
+    event: event,
+    time: timeStr,
+    connected: lot.connected
+  };
+
+  lot.rows_saved += 1;
+  lot.history.push(packet);
+  if (lot.history.length > 200) lot.history.shift();
+
+  refreshUI();
+}
+
+function applyPreset(type) {
+  const lot = lotsState[selectedLot];
+  if (!lot) return;
+
+  if (type === 'A') {
+    document.getElementById('simTemp').value = 25.0;
+    document.getElementById('simHum').value = 78;
+    document.getElementById('simWeight').value = 98.0;
+    document.getElementById('simEvent').value = 'Still';
+  } else if (type === 'B') {
+    document.getElementById('simTemp').value = 32.5;
+    document.getElementById('simHum').value = 52;
+    document.getElementById('simWeight').value = 89.5;
+    document.getElementById('simEvent').value = 'RoughRoad';
+  } else if (type === 'C') {
+    document.getElementById('simTemp').value = 38.0;
+    document.getElementById('simHum').value = 40;
+    document.getElementById('simWeight').value = 83.0;
+    document.getElementById('simEvent').value = 'Impact';
+  }
+
+  updateSimFromControls();
+}
+
+function triggerImpactSpike() {
+  document.getElementById('simEvent').value = 'Impact';
+  updateSimFromControls();
+}
+
+function toggleDisconnect() {
+  const lot = lotsState[selectedLot];
+  if (!lot) return;
+  lot.connected = !lot.connected;
+  if (!lot.connected) {
+    addAlert(lot.name + '_disconnect', 'err', `[${lot.name}] บอร์ด micro:bit ขาดการเชื่อมต่อ`);
+  } else {
+    removeAlert(lot.name + '_disconnect');
+  }
+  refreshUI();
+}
+
+function toggleDHTFault() {
+  const lot = lotsState[selectedLot];
+  if (!lot) return;
+  lot.sensor_dht = !lot.sensor_dht;
+  if (!lot.sensor_dht) {
+    addAlert(lot.name + '_dht', 'warn', `[${lot.name}] เซนเซอร์ DHT22 ทำงานผิดปกติ / ไม่ส่งค่า`);
+  } else {
+    removeAlert(lot.name + '_dht');
+  }
+  refreshUI();
+}
+
+function simCorruptRow() {
+  const lot = lotsState[selectedLot];
+  if (!lot) return;
+  lot.rows_skipped += 1;
+  addAlert(lot.name + '_trash', 'info', `[${lot.name}] กรองข้อมูลขยะใน Serial ออก 1 แถว`);
+  refreshUI();
+}
+
+function addNewLot() {
+  const count = Object.keys(lotsState).length + 1;
+  const name = 'ล็อต ' + count;
+  lotsState[name] = createDefaultLotState(name, 'COM' + (count + 2), 27.0, 72.0, 96.0, 'A', 0, 'Still');
+  updateSimSelectDropdown();
+  selectLot(name);
+  refreshUI();
+}
+
+function resetLotData() {
+  lotsState[selectedLot] = createDefaultLotState(selectedLot, "COM3", 26.5, 75.0, 97.5, "A", 0, "Still");
+  syncControlsWithLot(selectedLot);
+  refreshUI();
+}
+
+function toggleAutoSim() {
+  const btn = document.getElementById('simAutoBtn');
+  if (autoSimInterval) {
+    clearInterval(autoSimInterval);
+    autoSimInterval = null;
+    btn.innerHTML = '▶ เริ่มจำลองข้อมูลสด (Real-time)';
+    btn.className = 'tbtn tbtn-blue';
+  } else {
+    const speed = parseInt(document.getElementById('simSpeed').value);
+    autoSimInterval = setInterval(stepAutoSim, speed);
+    btn.innerHTML = '⏸ หยุดจำลองออโต้';
+    btn.className = 'tbtn tbtn-red';
+  }
+}
+
+function changeSimSpeed() {
+  if (autoSimInterval) {
+    toggleAutoSim();
+    toggleAutoSim();
+  }
+}
+
+function stepAutoSim() {
+  Object.values(lotsState).forEach(lot => {
+    if (!lot.connected) return;
+
+    // Simulate minor ambient fluctuations & continuous degradation
+    const dTemp = (Math.random() * 0.4 - 0.2);
+    const dHum = (Math.random() * 1.0 - 0.5);
+
+    const calc = calcShelfLife(lot.temp, lot.pct_weight);
+    // Continuous 4-sec weight loss equivalent
+    const lossPerStep = (calc.rate / 86400) * 4 * 10;
+    const newWeight = Math.max(78.0, lot.pct_weight - lossPerStep);
+
+    lot.temp = Math.max(10, Math.min(45, lot.temp + dTemp));
+    lot.humidity = Math.max(20, Math.min(99, lot.humidity + dHum));
+
+    const events = ['Still', 'Still', 'Still', 'SmoothRoad', 'Lift'];
+    if (Math.random() < 0.08) events.push('Impact');
+    const randEvent = events[Math.floor(Math.random() * events.length)];
+
+    pushSimulatedPacket(lot.name, lot.temp, lot.humidity, newWeight, randEvent);
+  });
+
+  syncControlsWithLot(selectedLot);
+}
+
+function addAlert(key, level, msg) {
+  activeAlerts[key] = { level, msg };
+  const nowStr = new Date().toTimeString().split(' ')[0];
+  alertsLog.push({ time: nowStr, level, msg });
+  if (alertsLog.length > 50) alertsLog.shift();
+}
+
+function removeAlert(key) {
+  delete activeAlerts[key];
+}
+
+function toggleTestPanel() {
+  const content = document.getElementById('tbContent');
+  const txt = document.getElementById('tbToggleText');
+  isPanelOpen = !isPanelOpen;
+  if (isPanelOpen) {
+    content.style.display = 'flex';
+    txt.textContent = '[ ซ่อนแผงทดสอบ ▲ ]';
+  } else {
+    content.style.display = 'none';
+    txt.textContent = '[ แสดงแผงทดสอบ ▼ ]';
+  }
+}
+
+// Initialize on page load
+window.addEventListener('DOMContentLoaded', initSimulator);
+</script>
+</body>
+</html>
