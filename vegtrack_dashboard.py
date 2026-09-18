@@ -682,7 +682,7 @@ footer{text-align:center;font-size:12.5px;color:var(--muted-2);padding:16px 0 24
   </div>
 
 </div>
-<footer>VegTrack v4 &mdash; ทีม BUZZA11DAY &mdash; ทำงานในเครื่อง ไม่ต้องใช้อินเทอร์เน็ต (ยกเว้นฟอนต์)</footer>
+<footer>Created by Team BUZZA11DAY</footer>
 
 <script>
 const GMSG={A:'ขายตามลำดับปกติ',B:'ควรเร่งขายก่อน',C:'ต้องขายวันนี้!'};
