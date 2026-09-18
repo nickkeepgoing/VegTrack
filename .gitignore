@@ -4,3 +4,4 @@ vegtrack_log.csv
 .DS_Store
 *.log
 credentials.json
+vegtrack_log.csv
