@@ -3,3 +3,4 @@ __pycache__/
 vegtrack_log.csv
 .DS_Store
 *.log
+credentials.json
