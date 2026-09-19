@@ -84,18 +84,27 @@ def to_float(v):
         return None
 
 
-def is_clean(d):
+def is_format_ok(d):
+    """เช็คว่าบรรทัดข้อมูลพาร์สได้ถูกต้อง (ไม่ใช่การเช็คช่วงค่าเซนเซอร์)
+    ถ้าไม่ผ่านข้อนี้แปลว่าบรรทัดเพี้ยนทั้งบรรทัด ไม่มีอะไรใช้ได้เลย"""
     for v in d.values():
         if "=" in str(v):
             return False
     grade = d.get("Grade", "-")
     if grade not in ("A", "B", "C", "-", ""):
         return False
-    t = to_float(d.get("T")) if d.get("T", "") not in ("", "-") else None
-    h = to_float(d.get("H")) if d.get("H", "") not in ("", "-") else None
-    if t is not None and not (TEMP_VALID[0] <= t <= TEMP_VALID[1]):
+    return True
+
+
+def is_dht_value_ok(t, h):
+    """เช็คเฉพาะว่าค่าที่ DHT อ่านได้อยู่ในช่วงที่เป็นไปได้จริงหรือไม่
+    แยกจาก is_format_ok เพื่อให้ Event/Impact จาก Edge AI ยังใช้ได้
+    แม้ DHT จะอ่านค่าขยะ (-999, 0, ฯลฯ) ก็ตาม"""
+    if t is None or h is None:
         return False
-    if h is not None and not (HUM_VALID[0] <= h <= HUM_VALID[1]):
+    if not (TEMP_VALID[0] <= t <= TEMP_VALID[1]):
+        return False
+    if not (HUM_VALID[0] <= h <= HUM_VALID[1]):
         return False
     if t == 0.0 and h == 0.0:
         return False
@@ -313,7 +322,8 @@ def serial_reader_loop(lot_name, csv_file):
             continue
 
         d = parse_line(line)
-        if not is_clean(d):
+        if not is_format_ok(d):
+            # บรรทัดเพี้ยนทั้งบรรทัด (ไม่ใช่แค่ DHT) ไม่มีอะไรใช้ได้เลย ข้ามทิ้ง
             with _lock:
                 _lots_state[lot_name]["rows_skipped"] += 1
             continue
@@ -328,17 +338,13 @@ def serial_reader_loop(lot_name, csv_file):
         impact = d.get("Impact", "-")
         event  = d.get("Event", "-")
 
-        dht_ok    = (t is not None and h is not None)
+        dht_ok    = is_dht_value_ok(t, h)
         weight_ok = (w is not None)
 
         if not dht_ok:
             set_alert(f"{lot_name}_dht", "warn", f"[{lot_name}] DHT sensor ไม่ส่งค่า T/H")
         else:
             clear_alert(f"{lot_name}_dht")
-        if not weight_ok:
-            set_alert(f"{lot_name}_weight", "warn", f"[{lot_name}] Load cell ไม่ส่งค่าน้ำหนัก")
-        else:
-            clear_alert(f"{lot_name}_weight")
         if grade == "C":
             set_alert(f"{lot_name}_grade_c", "err",
                       f"[{lot_name}] เกรด C! ต้องขายหรือคัดแยกทันที")
@@ -353,6 +359,29 @@ def serial_reader_loop(lot_name, csv_file):
         except (ValueError, TypeError):
             pass
 
+        infra["last_row_ts"] = time.time()
+        clear_alert(f"{lot_name}_timeout")
+
+        if not dht_ok:
+            # DHT อ่านค่าขยะ (-999, 0, ฯลฯ) — ไม่บันทึกลง CSV/Google Sheets เด็ดขาด
+            # แต่ Event/Impact จาก Edge AI ยังทำงานอิสระจาก DHT จึงยังอัปเดตให้เห็นสด ๆ ได้
+            # (ไม่แตะ temp/humidity/pct_weight/days/history — ค่าจริงล่าสุดที่ยังถูกต้องจะยังค้างแสดงอยู่)
+            with _lock:
+                s = _lots_state[lot_name]
+                s["impact"]        = impact
+                s["event"]         = event
+                s["time"]          = stamp
+                s["connected"]     = True
+                s["sensor_dht"]    = False
+                s["sensor_weight"] = weight_ok
+                s["rows_skipped"] += 1
+            continue
+
+        if not weight_ok:
+            set_alert(f"{lot_name}_weight", "warn", f"[{lot_name}] Load cell ไม่ส่งค่าน้ำหนัก")
+        else:
+            clear_alert(f"{lot_name}_weight")
+
         row = {
             "temp": t, "humidity": h, "pct_weight": w, "days": days,
             "grade": grade, "impact": impact, "event": event,
@@ -364,8 +393,6 @@ def serial_reader_loop(lot_name, csv_file):
                                       d.get("W", ""), d.get("Days", ""),
                                       grade, impact, event])
         infra["csv_handle"].flush()
-        infra["last_row_ts"] = time.time()
-        clear_alert(f"{lot_name}_timeout")
 
         threading.Thread(
             target=gsheet_append,
@@ -536,6 +563,50 @@ body{
 .topbar-lots{display:flex;gap:8px}
 .tlot{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:500;color:var(--muted);
   padding:6px 14px;border-radius:20px;border:1px solid var(--border);background:rgba(15,23,42,.02)}
+.sound-btn{
+  display:inline-flex;align-items:center;gap:6px;
+  background:rgba(15,23,42,.03);border:1px solid var(--border);border-radius:20px;
+  padding:7px 15px;font-size:12.5px;font-weight:600;color:var(--muted);
+  cursor:pointer;transition:all .2s;font-family:inherit;
+}
+.sound-btn:hover{background:rgba(15,23,42,.06)}
+.sound-btn.on{color:#15803d;border-color:rgba(22,163,74,.3);background:rgba(22,163,74,.08)}
+.log-header{display:flex;align-items:center;justify-content:space-between;margin:26px 0 10px}
+.log-header .section-lbl{margin:0}
+.save-btn{
+  display:inline-flex;align-items:center;gap:6px;
+  background:linear-gradient(135deg,#16a34a,#0d9488);color:#fff;
+  border:none;border-radius:20px;padding:8px 16px;font-size:12.5px;font-weight:600;
+  cursor:pointer;box-shadow:0 4px 12px rgba(22,163,74,.25);
+  transition:all .2s;font-family:inherit;
+}
+.save-btn:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(22,163,74,.35)}
+.save-btn:active{transform:translateY(0)}
+.save-btn svg{width:14px;height:14px}
+.toast{
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);
+  background:#0f172a;color:#fff;padding:11px 20px;border-radius:12px;font-size:13px;font-weight:600;
+  box-shadow:0 10px 30px rgba(0,0,0,.25);opacity:0;pointer-events:none;transition:all .3s cubic-bezier(.4,0,.2,1);
+  z-index:999;display:flex;align-items:center;gap:8px;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.degraded-banner{
+  display:none;align-items:center;gap:10px;
+  background:linear-gradient(135deg,#fef3c7,#fde68a);
+  border:1px solid #f59e0b;color:#78350f;
+  padding:12px 18px;border-radius:14px;
+  font-size:13px;font-weight:700;margin-bottom:16px;
+}
+.degraded-banner.show{display:flex}
+.live-pulse{
+  width:9px;height:9px;border-radius:50%;background:#16a34a;
+  display:inline-block;margin-left:7px;flex-shrink:0;
+  animation:livepulse 1.3s ease infinite;
+}
+@keyframes livepulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(1.5)}}
+.card.stale{opacity:.4;filter:grayscale(.6)}
+.gh-days-block.stale{opacity:.4;filter:grayscale(.6)}
+
 .tdot{width:6px;height:6px;border-radius:50%;background:rgba(15,23,42,.15);transition:.4s}
 .tdot.on{background:#16a34a;box-shadow:0 0 8px rgba(22,163,74,.5)}
 .topbar-right{margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:12.5px;color:var(--muted-2)}
@@ -668,6 +739,7 @@ footer{text-align:center;font-size:12.5px;color:var(--muted-2);padding:16px 0 24
   <div class="main-area">
     <header class="topbar">
       <div class="topbar-lots" id="tlots"></div>
+      <button id="soundToggle" class="sound-btn on" onclick="toggleSound()">🔔 เสียงแจ้งเตือน: เปิด</button>
       <span class="topbar-right" id="updlbl"></span>
     </header>
     <div class="astrip" id="astrip">
@@ -683,12 +755,87 @@ footer{text-align:center;font-size:12.5px;color:var(--muted-2);padding:16px 0 24
 
 </div>
 <footer>VegTrack v4 &mdash; ทีม BUZZA11DAY &mdash; ทำงานในเครื่อง ไม่ต้องใช้อินเทอร์เน็ต (ยกเว้นฟอนต์)</footer>
+<div class="toast" id="toast"></div>
 
 <script>
 const GMSG={A:'ขายตามลำดับปกติ',B:'ควรเร่งขายก่อน',C:'ต้องขายวันนี้!'};
 const REF_DAYS=3;   // ใช้ปรับสเกลวงแหวนวันที่เหลือ (baseline อายุคะน้าที่อุณหภูมิห้อง)
 let selectedLot=null;
 let lotNames=[];
+let lastLotsData={};     // name -> lot object ล่าสุด (ไว้ให้ปุ่มบันทึก CSV ใช้)
+let prevGrades={};       // name -> เกรดล่าสุดที่เคยเห็น (ไว้ตรวจจับตอนเปลี่ยนเป็น C)
+let soundOn=true;
+let audioCtx=null;
+
+function toggleSound(){
+  soundOn=!soundOn;
+  const btn=document.getElementById('soundToggle');
+  if(soundOn){
+    btn.textContent='🔔 เสียงแจ้งเตือน: เปิด';
+    btn.classList.add('on');
+    try{
+      if(!audioCtx)audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+      if(audioCtx.state==='suspended')audioCtx.resume();
+    }catch(e){}
+  }else{
+    btn.textContent='🔕 เสียงแจ้งเตือน: ปิด';
+    btn.classList.remove('on');
+  }
+}
+
+function beep(){
+  if(!soundOn)return;
+  try{
+    if(!audioCtx)audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+    const now=audioCtx.currentTime;
+    [0,0.18].forEach(delay=>{
+      const o=audioCtx.createOscillator();
+      const g=audioCtx.createGain();
+      o.type='sine';o.frequency.value=880;
+      g.gain.setValueAtTime(0.0001,now+delay);
+      g.gain.exponentialRampToValueAtTime(0.22,now+delay+0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001,now+delay+0.28);
+      o.connect(g);g.connect(audioCtx.destination);
+      o.start(now+delay);o.stop(now+delay+0.3);
+    });
+  }catch(e){}
+}
+
+function showToast(msg){
+  const t=document.getElementById('toast');
+  if(!t)return;
+  t.textContent=msg;
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer=setTimeout(()=>t.classList.remove('show'),2600);
+}
+
+function csvEscape(v){
+  v=(v==null?'':String(v));
+  if(/[",\\n]/.test(v))return '"'+v.replace(/"/g,'""')+'"';
+  return v;
+}
+
+function downloadCSV(lotName){
+  const lot=lastLotsData[lotName];
+  if(!lot||!lot.history||!lot.history.length){
+    showToast('ยังไม่มีข้อมูลให้บันทึก');
+    return;
+  }
+  const header=['time','temp_c','humidity_pct','pct_weight','days_left','grade','impact_total','event'];
+  const rows=[header];
+  lot.history.forEach(r=>rows.push([r.time,r.temp,r.humidity,r.pct_weight,r.days,r.grade,r.impact,r.event]));
+  const csv=rows.map(r=>r.map(csvEscape).join(',')).join('\\r\\n');
+  const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const stamp=new Date().toISOString().slice(0,19).replace(/[:T]/g,'-');
+  const a=document.createElement('a');
+  a.href=url;
+  a.download='vegtrack_'+lotName.replace(/\s+/g,'_')+'_'+stamp+'.csv';
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+  showToast('บันทึก CSV แล้ว: '+lot.history.length+' แถว');
+}
 
 const ICONS={
   temp:'<path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" stroke="currentColor" stroke-width="2"/><path d="M12 12V4a2 2 0 1 0-4 0v8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>',
@@ -757,6 +904,10 @@ function ensureDetailPanes(lots){
       const div=document.createElement('div');
       div.id=id;div.className='detail';
       div.innerHTML=`
+        <div class="degraded-banner" id="${id}_degraded">
+          <span>⚠</span>
+          <span>DHT ขัดข้องชั่วคราว — กำลังแสดงเฉพาะผลจาก Edge AI สด (อุณหภูมิ/ความชื้นค้างค่าเก่าล่าสุด)</span>
+        </div>
         <div class="grade-hero gnull-bg" id="${id}_hero">
           <div class="gh-left">
             <div>
@@ -807,7 +958,7 @@ function ensureDetailPanes(lots){
           </div>
           <div class="card" style="--cg:linear-gradient(135deg,#f59e0b,#fbbf24);--cs:rgba(245,158,11,.35)">
             <div class="cicon" style="background:var(--cg);box-shadow:0 6px 16px var(--cs)"><svg viewBox="0 0 24 24" fill="none">${ICONS.event}</svg></div>
-            <div class="clbl">เหตุการณ์ล่าสุด</div>
+            <div class="clbl">เหตุการณ์ล่าสุด<span class="live-pulse" title="Edge AI ทำงานสด"></span></div>
             <div class="cval" style="font-size:16px;padding-top:2px" id="${id}_ev">-</div>
           </div>
           <div class="card" style="--cg:linear-gradient(135deg,#22c55e,#0d9488);--cs:rgba(34,197,94,.35)">
@@ -832,9 +983,17 @@ function ensureDetailPanes(lots){
           </div>
         </div>
 
-        <div class="section-lbl">Raw Log</div>
+        <div class="log-header">
+          <div class="section-lbl">Raw Log</div>
+          <button class="save-btn" data-lot="${esc(lot.name)}">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M12 3v12m0 0 4-4m-4 4-4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            บันทึก CSV
+          </button>
+        </div>
         <div class="logbox" id="${id}_log">รอข้อมูล...</div>`;
       panes.appendChild(div);
+      const saveBtn = div.querySelector('.save-btn');
+      if(saveBtn) saveBtn.addEventListener('click', ()=>downloadCSV(lot.name));
     }
   });
 }
@@ -863,6 +1022,16 @@ function updateDetail(lot){
   s('_tv',lot.temp);s('_hv',lot.humidity);s('_wv',lot.pct_weight);
   s('_dv',lot.days);s('_iv',lot.impact);s('_ev',lot.event);
   s('_skip',lot.rows_skipped);s('_saved',lot.rows_saved);
+
+  // DHT ขัดข้องชั่วคราว -> โชว์แบนเนอร์ + ทำการ์ดอุณหภูมิ/ความชื้น/น้ำหนัก/วันที่ให้จาง (ค้างค่าล่าสุด)
+  const dhtOk = lot.sensor_dht !== false;
+  const banner = document.getElementById(id+'_degraded');
+  if(banner) banner.classList.toggle('show', !dhtOk);
+  const tCard = document.getElementById(id+'_tv') && document.getElementById(id+'_tv').closest('.card');
+  const hCard = document.getElementById(id+'_hv') && document.getElementById(id+'_hv').closest('.card');
+  const wCard = document.getElementById(id+'_wv') && document.getElementById(id+'_wv').closest('.card');
+  const daysBlock = document.getElementById(id+'_dv') && document.getElementById(id+'_dv').closest('.gh-days-block');
+  [tCard,hCard,wCard,daysBlock].forEach(function(el){ if(el) el.classList.toggle('stale', !dhtOk); });
 
   // ring = % น้ำหนักคงเหลือ (ข้อมูลจริงจากบอร์ด ไม่ใช่ค่าประดิษฐ์)
   const ring=document.getElementById(id+'_ring');
@@ -986,6 +1155,16 @@ async function refresh(){
 
   const sorted=[...lots].sort((a,b)=>urgency(b)-urgency(a));
   if(!selectedLot||!lotNames.includes(selectedLot))selectedLot=sorted[0].name;
+
+  // ตรวจจับการเปลี่ยนเป็นเกรด C ครั้งแรก -> ส่งเสียงเตือน (ไม่ร้องซ้ำถ้ายังเป็น C ต่อเนื่อง)
+  lots.forEach(l=>{
+    lastLotsData[l.name]=l;
+    if(l.connected&&l.grade==='C'&&prevGrades[l.name]!=='C'){
+      beep();
+      showToast('⚠ '+l.name+' ถึงเกรด C แล้ว — ต้องขายวันนี้!');
+    }
+    prevGrades[l.name]=l.grade;
+  });
 
   renderCompare(lots);
   renderTabs(lots);
